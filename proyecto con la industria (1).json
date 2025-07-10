@@ -1,0 +1,539 @@
+{
+  "name": "proyecto con la industria",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "frontend-speech",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        420,
+        0
+      ],
+      "id": "3a4fe826-490e-4385-880d-6d5ff49cb0e5",
+      "name": "Webhook",
+      "webhookId": "c958ab01-2601-47f2-86e3-02e73baaf360"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBa1XPmvd5FNl-bBFtQ5rC8MiszdHOvXps",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"INSTRUCCIONES IMPORTANTES:\\n\\nDevuelve únicamente un objeto JSON válido (sin comillas, sin adornos, sin `json` al principio). No uses triple comilla ni introducción. Solo responde con el JSON directamente. Usa esta estructura:\\n\\n{\\n  \\\"intent\\\": \\\"listar_todo\\\" o \\\"buscar_productos\\\",\\n  \\\"filters\\\": [ { \\\"field\\\": \\\"Color\\\", \\\"value\\\": \\\"blanco\\\" } ],\\n  \\\"message\\\": \\\"Se detectó...\\\"\\n}\\n\\nEntrada del usuario:\\n\\n{{ $json.body.text }}\"\n        }\n      ]\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        0
+      ],
+      "id": "8cb46e2a-a1a3-49c6-a821-5de278885700",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "let parsedResult;\n\ntry {\n  // Paso 1: Obtener el texto crudo generado por Gemini\n  const rawText = $json.candidates[0].content.parts[0].text;\n\n  // Paso 2: Limpiar texto (quitar comillas, etiquetas \"json\", espacios, etc.)\n  const cleanedText = rawText\n    .replace(/^\"json/, '') // elimina encabezado \"json\n    .replace(/^json/, '')\n    .replace(/^```json/, '')\n    .replace(/^```/, '')\n    .replace(/```$/, '')\n    .trim();\n\n  // Paso 3: Mostrar en consola\n  console.log(\"✅ Texto limpio:\", cleanedText);\n\n  // Paso 4: Intentar parsear el JSON limpio\n  parsedResult = JSON.parse(cleanedText);\n  console.log(\"✅ JSON parseado correctamente:\", parsedResult);\n\n} catch (error) {\n  console.error(\"❌ Error al parsear JSON:\", error.message);\n  parsedResult = {\n    intent: \"listar_todo\",\n    filters: [],\n    message: \"No se pudo interpretar el mensaje del usuario.\"\n  };\n}\n\n// Paso 5: Retornar salida estandarizada\nreturn [\n  {\n    json: {\n      intent: parsedResult.intent || \"listar_todo\",\n      filters: parsedResult.filters || [],\n      message: parsedResult.message || \"\"\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "1d269dcf-ac8b-4f90-a944-e062167f9b69",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8b88297b-2556-4474-9c97-0e0c535bdddc",
+              "leftValue": "={{ $json[ $item(0).$node[\"Edit Fields\"].json[\"queryField\"].trim() ]?.toLowerCase().includes($item(0).$node[\"Edit Fields\"].json[\"queryValue\"].trim().toLowerCase()) }}\n\n",
+              "rightValue": "={{ $item(0).$node[\"Edit Fields\"].json[\"queryValue\"].toLowerCase() }}\n",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        -920
+      ],
+      "id": "6519487c-01d6-4c40-aed1-99e770f17ce0",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.finalResponse }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        2980,
+        -200
+      ],
+      "id": "a04eba09-fd79-48cb-9048-28d31f62853e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1EtoFbBxXJjN9XRuVzZXNbSktBrdkthbqp0PMLUnOw1k",
+          "mode": "list",
+          "cachedResultName": "products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EtoFbBxXJjN9XRuVzZXNbSktBrdkthbqp0PMLUnOw1k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 585399714,
+          "mode": "list",
+          "cachedResultName": "products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EtoFbBxXJjN9XRuVzZXNbSktBrdkthbqp0PMLUnOw1k/edit#gid=585399714"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1420,
+        -160
+      ],
+      "id": "1460d6a5-3fa4-45d4-825c-a08407be696e",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "R5lO3CHzdgzs8YNk",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1EtoFbBxXJjN9XRuVzZXNbSktBrdkthbqp0PMLUnOw1k",
+          "mode": "list",
+          "cachedResultName": "products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EtoFbBxXJjN9XRuVzZXNbSktBrdkthbqp0PMLUnOw1k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 585399714,
+          "mode": "list",
+          "cachedResultName": "products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EtoFbBxXJjN9XRuVzZXNbSktBrdkthbqp0PMLUnOw1k/edit#gid=585399714"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1600,
+        80
+      ],
+      "id": "5b6e23a4-b3d8-4240-84f7-e7fb4c9a5ab7",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "R5lO3CHzdgzs8YNk",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5931e0f1-aa32-4766-8487-ce613af55158",
+              "name": "queryField",
+              "value": "={{ $json[\"filters\"][0][\"field\"].toString().replace(/[\\n\\r\\t\\u2028\\u2029]/g, '').trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "acfd2f00-b35a-4ea5-9323-7999a439f75a",
+              "name": "queryValue",
+              "value": "={{ $json[\"filters\"][0][\"value\"].toString().replace(/[\\n\\r\\t\\u2028\\u2029]/g, '').trim().toLowerCase() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1380,
+        260
+      ],
+      "id": "a1dcef36-36dc-4d11-8598-4e4dd855032f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1860,
+        260
+      ],
+      "id": "985eac93-aed1-4333-92ff-44b45a0501ca",
+      "name": "Merge"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2140,
+        -940
+      ],
+      "id": "b579e8d0-3f41-438a-b7cf-796a479661fd",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "listar_todo",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c751caac-a136-4079-b732-da78282da06d"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6a2bfc68-d46e-4f3e-8aed-6b52872ff74c",
+                    "leftValue": "={{ $json.intent.trim() }}",
+                    "rightValue": "buscar_productos",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1200,
+        40
+      ],
+      "id": "08ee3b8e-ac05-4fa4-b260-a56bf6723c64",
+      "name": "selector"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener la consulta del usuario\nconst query = (items[0].json.queryMaterial || \"\").toLowerCase().trim();\n\n// Separar todas las palabras clave\nconst keywords = query.split(/\\s+/).filter(k => k);\n\n// Función que valida si un campo contiene todas las palabras clave\nfunction fieldContainsAll(fields, keywords) {\n  const combined = fields.join(\" \").toLowerCase();\n  return keywords.every(kw => combined.includes(kw));\n}\n\n// Filtrar resultados\nconst results = items.filter(item => {\n  const desc = item.json.Descripción || \"\";\n  const name = item.json.Nombre || \"\";\n  const color = item.json.Color || \"\";\n  \n  // Si no hay palabras clave, mostrar todo\n  if (keywords.length === 0) return true;\n\n  // Validar si todas las keywords están en algún campo combinado\n  return fieldContainsAll([desc, name, color], keywords);\n});\n\n// Armar respuesta\nlet responseMessage = \"\";\n\nif (results.length > 0) {\n  responseMessage = `✅ Aquí tienes los productos que coinciden con tu búsqueda \"${query}\":\\n\\n`;\n  results.forEach(row => {\n    responseMessage += `⭐ *${row.json.Nombre || 'Sin nombre'}*\\n`;\n    responseMessage += `🔹 SKU: ${row.json.SKU || 'N/A'}\\n`;\n    responseMessage += `🔹 Color: ${row.json.Color || 'N/A'}\\n`;\n    responseMessage += `🔹 Tamaño/Formato: ${row.json.Nombre?.match(/\\d+\\*\\d+/)?.[0] || 'N/A'}\\n`;\n    responseMessage += `🔹 Uso sugerido: ${row.json.Descripción?.match(/(interior|exterior|fachadas|baños|cocinas|recámaras|muros|pisos)/gi)?.join(\", \") || 'No especificado'}\\n`;\n    responseMessage += `🔹 Descripción: ${row.json.Descripción || 'N/A'}\\n`;\n    responseMessage += `-----------------------------------\\n`;\n  });\n} else {\n  responseMessage = `⚠️ No encontré productos que coincidan con tu búsqueda \"${query}\". Prueba con otras palabras clave como material, color o tamaño.`;\n}\n\nreturn [{ json: { finalResponse: responseMessage } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2520,
+        -220
+      ],
+      "id": "dd082f3c-e084-4876-98b9-9c07a313aafc",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const productos = $input.all();\nconst resultados = [];\n\nfunction normalizarTexto(texto) {\n  return texto?.toString()\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .replace(/[\\n\\r\\t\\u2028\\u2029]/g, ' ')\n    .trim()\n    .toLowerCase();\n}\n\nconst queryField = \"descripcion\";\nconst queryValue = normalizarTexto(items[0].json.queryValue);\n\nfor (const producto of productos) {\n  const campoProducto = Object.keys(producto.json).find(k =>\n    k.toLowerCase().includes(queryField)\n  );\n\n  if (!campoProducto) continue;\n\n  const descripcionActual = normalizarTexto(producto.json[campoProducto]);\n\n  console.log(`🔍 Comparando descripción: esperado='${queryValue}' vs actual='${descripcionActual}'`);\n\n  if (descripcionActual.includes(queryValue)) {\n    console.log(\"✅ Producto válido. Agregado.\");\n    resultados.push(producto);\n  } else {\n    console.log(\"❌ No coincide. Producto descartado.\");\n  }\n}\n\nreturn resultados;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2340,
+        980
+      ],
+      "id": "fc8de66b-8c1f-4219-b352-24bd54c80d14",
+      "name": "descripcion"
+    },
+    {
+      "parameters": {
+        "jsCode": "const productos = $input.all();\nconst filtros = [];\nconst resultados = [];\n\n// Obtener filtros desde el input\nfor (const entrada of items) {\n  if (entrada.json.queryField && entrada.json.queryValue) {\n    filtros.push({\n      campo: entrada.json.queryField,\n      valor: entrada.json.queryValue,\n    });\n  }\n}\n\nconsole.log(`📦 Productos cargados: ${productos.length}`);\nconsole.log(`🧪 Filtros recibidos:`, filtros);\n\nif (filtros.length === 0) {\n  console.log(\"⚠️ No se encontraron filtros. Retornando todos los productos.\");\n  return productos;\n}\n\nfunction normalizarTexto(texto) {\n  return texto?.toString()\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .replace(/[\\n\\r\\t\\u2028\\u2029]/g, ' ')\n    .trim()\n    .toLowerCase();\n}\n\nfor (const producto of productos) {\n  let cumpleTodos = true;\n\n  for (const filtro of filtros) {\n    const campoReal = filtro.campo;\n    const valorEsperado = normalizarTexto(filtro.valor);\n\n    // Buscar clave del producto que coincida sin importar mayúsculas\n    const campoKey = Object.keys(producto.json).find(k => k.toLowerCase() === campoReal.toLowerCase());\n    const valorActual = normalizarTexto(producto.json[campoKey]);\n\n    console.log(`🔍 Comparando campo '${campoReal}': esperado='${valorEsperado}' vs actual='${valorActual}'`);\n\n    if (!valorActual || !valorActual.includes(valorEsperado)) {\n      console.log(\"❌ No coincide. Producto descartado.\");\n      cumpleTodos = false;\n      break;\n    }\n  }\n\n  if (cumpleTodos) {\n    console.log(\"✅ Producto válido. Agregado.\");\n    resultados.push(producto);\n  }\n}\n\nreturn resultados;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        980
+      ],
+      "id": "ec3cff26-64fb-4658-a3e1-64e93f08355d",
+      "name": "color"
+    },
+    {
+      "parameters": {
+        "jsCode": "const productos = $input.all();\nconst entrada = items[0].json;\nconst resultados = [];\n\nconst campo = (entrada.queryField || \"\").toLowerCase().trim();\nconst valor = (entrada.queryValue || \"\").toLowerCase().trim();\n\nfunction normalizar(texto) {\n  return texto?.toString()\n    .normalize(\"NFD\")\n    .replace(/[\\u0300-\\u036f]/g, \"\")\n    .replace(/[\\n\\r\\t]/g, ' ')\n    .trim()\n    .toLowerCase();\n}\n\nfor (const producto of productos) {\n  const p = producto.json;\n  let coincide = false;\n\n  if (campo === \"color\" && normalizar(p.Color).includes(valor)) {\n    coincide = true;\n  } else if (campo === \"sku\" && normalizar(p.SKU).includes(valor)) {\n    coincide = true;\n  } else if (campo === \"nombre\" && normalizar(p.Nombre).includes(valor)) {\n    coincide = true;\n  } else if (campo === \"metros por caja\" && normalizar(p[\"Metros por caja\"]).includes(valor)) {\n    coincide = true;\n  } else {\n    // Si no es campo directo, buscar en Descripción, Nombre y Vetas\n    const combined = `${p.Descripción} ${p.Nombre} ${p.Vetas}`.toLowerCase();\n    if (combined.includes(valor)) {\n      coincide = true;\n    }\n  }\n\n  if (coincide) {\n    resultados.push(producto);\n  }\n}\n\nreturn resultados;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        140
+      ],
+      "id": "bc4ccae6-ab02-413a-8f62-2d3db5bd32f3",
+      "name": "Code3"
+    }
+  ],
+  "pinData": {
+    "HTTP Request": [
+      {
+        "json": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "text": "```json\n{\n  \"intent\": \"buscar_productos\",\n  \"filters\": [\n    {\n      \"field\": \"Tamaño\",\n      \"value\": \"chico\"\n    }\n  ],\n  \"message\": \"Se detectó una intención de búsqueda de productos con el filtro de Tamaño 'chico'.\"\n}\n```"
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "index": 0
+            }
+          ],
+          "usageMetadata": {
+            "promptTokenCount": 115,
+            "candidatesTokenCount": 74,
+            "totalTokenCount": 259,
+            "promptTokensDetails": [
+              {
+                "modality": "TEXT",
+                "tokenCount": 115
+              }
+            ],
+            "thoughtsTokenCount": 70
+          },
+          "modelVersion": "gemini-2.5-flash",
+          "responseId": "_CVsaJSwLua8qtsP2-yXqQU"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "selector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        []
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        []
+      ]
+    },
+    "selector": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "descripcion": {
+      "main": [
+        []
+      ]
+    },
+    "color": {
+      "main": [
+        []
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6ec36f84-ffe5-4a75-9cf7-a6d11d2cc446",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30ba4e739794833629fd37ca9e1f4c9c6fc9614b98b2aa0cfc4cc841576459e0"
+  },
+  "id": "ZizaB3teKAZKpp6w",
+  "tags": []
+}
