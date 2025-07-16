@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Web Speech API</title>
+    <script src="script.js" defer></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Speech to Text</h1>
+      <div class="speech-container">
+        <button id="micButton" class="mic-button">
+          🎤
+        </button>
+        <p class="status">Presiona el micrófono para comenzar</p>
+        <div class="text-output">
+          <textarea id="textOutput" placeholder="Escribe o dicta tu mensaje aquí..."></textarea>
+        </div>
+        <div class="text-output">
+          <textarea id="responseOutput" placeholder="La respuesta del servidor aparecerá aquí..." readonly></textarea>
+        </div>
+        <div class="controls">
+          <button id="saveButton" class="save-button">💾 Guardar</button>
+          <button id="clearButton" class="clear-button">Limpiar</button>
+          <button id="copyButton" class="copy-button">Copiar</button>
+        </div>
+      </div>
+      
+      <div class="saved-messages-section">
+        <div class="saved-messages-header">
+          <h2>Mensajes Guardados</h2>
+          <button id="clearAllButton" class="clear-all-button">🗑️ Limpiar Todo</button>
+        </div>
+        <div id="savedMessagesList" class="saved-messages-list">
+          <p class="no-messages">No hay mensajes guardados</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
